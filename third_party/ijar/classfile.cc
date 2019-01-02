@@ -815,8 +815,10 @@ struct TypeAnnotation {
   };
 
   struct EmptyInfo : TargetInfo {
-    void Write(u1 *& /*p*/) {}
-    static EmptyInfo *Read(const u1 *& /*p*/) { return new EmptyInfo; }
+    void Write(u1 *&p) {}
+    static EmptyInfo *Read(const u1 *&p) {
+      return new EmptyInfo;
+    }
   };
 
   struct MethodFormalParameterInfo : TargetInfo {
@@ -1019,8 +1021,8 @@ struct SignatureAttribute : Attribute {
 // We preserve Deprecated attributes because they are required by the
 // compiler to generate warning messages.
 struct DeprecatedAttribute : Attribute {
-  static DeprecatedAttribute *Read(const u1 *& /*p*/,
-                                   Constant *attribute_name) {
+
+  static DeprecatedAttribute* Read(const u1 *&p, Constant *attribute_name) {
     DeprecatedAttribute *attr = new DeprecatedAttribute;
     attr->attribute_name_ = attribute_name;
     return attr;
@@ -1124,8 +1126,8 @@ struct ParameterAnnotationsAttribute : Attribute {
 // See sec.4.7.20 of Java 8 JVM spec. Includes RuntimeVisibleTypeAnnotations
 // and RuntimeInvisibleTypeAnnotations.
 struct TypeAnnotationsAttribute : Attribute {
-  static TypeAnnotationsAttribute *Read(const u1 *&p, Constant *attribute_name,
-                                        u4 /*attribute_length*/) {
+  static TypeAnnotationsAttribute* Read(const u1 *&p, Constant *attribute_name,
+                                        u4 attribute_length) {
     auto attr = new TypeAnnotationsAttribute;
     attr->attribute_name_ = attribute_name;
     u2 num_annotations = get_u2be(p);
@@ -1158,7 +1160,7 @@ struct TypeAnnotationsAttribute : Attribute {
 // See JVMS §4.7.24
 struct MethodParametersAttribute : Attribute {
   static MethodParametersAttribute *Read(const u1 *&p, Constant *attribute_name,
-                                         u4 /*attribute_length*/) {
+                                         u4 attribute_length) {
     auto attr = new MethodParametersAttribute;
     attr->attribute_name_ = attribute_name;
     u1 parameters_count = get_u1(p);
@@ -1188,48 +1190,6 @@ struct MethodParametersAttribute : Attribute {
   };
 
   std::vector<MethodParameter*> parameters_;
-};
-
-// See JVMS §4.7.28
-struct NestHostAttribute : Attribute {
-  static NestHostAttribute *Read(const u1 *&p, Constant *attribute_name,
-                                 u4 /*attribute_length*/) {
-    auto attr = new NestHostAttribute;
-    attr->attribute_name_ = attribute_name;
-    attr->host_class_index_ = constant(get_u2be(p));
-    return attr;
-  }
-
-  void Write(u1 *&p) {
-    WriteProlog(p, 2);
-    put_u2be(p, host_class_index_->slot());
-  }
-
-  Constant *host_class_index_;
-};
-
-// See JVMS §4.7.29
-struct NestMembersAttribute : Attribute {
-  static NestMembersAttribute *Read(const u1 *&p, Constant *attribute_name,
-                                    u4 /*attribute_length*/) {
-    auto attr = new NestMembersAttribute;
-    attr->attribute_name_ = attribute_name;
-    u2 number_of_classes = get_u2be(p);
-    for (int ii = 0; ii < number_of_classes; ++ii) {
-      attr->classes_.push_back(constant(get_u2be(p)));
-    }
-    return attr;
-  }
-
-  void Write(u1 *&p) {
-    WriteProlog(p, classes_.size() * 2 + 2);
-    put_u2be(p, classes_.size());
-    for (size_t ii = 0; ii < classes_.size(); ++ii) {
-      put_u2be(p, classes_[ii]->slot());
-    }
-  }
-
-  std::vector<Constant *> classes_;
 };
 
 struct GeneralAttribute : Attribute {
@@ -1441,12 +1401,6 @@ void HasAttrs::ReadAttrs(const u1 *&p) {
     } else if (attr_name == "MethodParameters") {
       attributes.push_back(
           MethodParametersAttribute::Read(p, attribute_name, attribute_length));
-    } else if (attr_name == "NestHost") {
-      attributes.push_back(
-          NestHostAttribute::Read(p, attribute_name, attribute_length));
-    } else if (attr_name == "NestMembers") {
-      attributes.push_back(
-          NestMembersAttribute::Read(p, attribute_name, attribute_length));
     } else {
       // Skip over unknown attributes with a warning.  The JVM spec
       // says this is ok, so long as we handle the mandatory attributes.

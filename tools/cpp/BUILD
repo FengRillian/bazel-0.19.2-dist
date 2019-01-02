@@ -104,6 +104,7 @@ cc_toolchain_suite(
         "s390x": ":cc-compiler-local",
         "ppc": ":cc-compiler-local",
         "ppc64": ":cc-compiler-local",
+	"mips64": ":cc-compiler-mips64",
         "darwin": ":cc-compiler-darwin",
         "freebsd": ":cc-compiler-freebsd",
         "armeabi-v7a": ":cc-compiler-armeabi-v7a",
@@ -137,6 +138,19 @@ toolchain(
     ],
     toolchain = ":cc-compiler-local",
     toolchain_type = ":toolchain_type",
+)
+cc_toolchain(
+    name = "cc-compiler-mips64",
+    all_files = ":empty",
+    compiler_files = ":empty",
+    cpu = "mips64",
+    dwp_files = ":empty",
+    dynamic_runtime_libs = [":empty"],
+    linker_files = ":empty",
+    objcopy_files = ":empty",
+    static_runtime_libs = [":empty"],
+    strip_files = ":empty",
+    supports_param_files = 1,
 )
 
 cc_toolchain(

@@ -71,6 +71,10 @@ if [ "${MACHINE_TYPE}" = 'ppc64' -o "${MACHINE_TYPE}" = 'ppc64le' ]; then
   MACHINE_IS_64BIT='yes'
 fi
 
+if [ "${MACHINE_TYPE}" = 'mips64' -o "${MACHINE_TYPE}" = 'mips64el' ]; then
+  MACHINE_IS_64BIT='yes'
+fi
+
 PATHSEP=":"
 case "${PLATFORM}" in
 linux)
@@ -161,7 +165,7 @@ function tempdir() {
   local DIR="$(mktemp -d "${tmp%%/}/bazel_XXXXXXXX")"
   mkdir -p "${DIR}"
   local DIRBASE=$(basename "${DIR}")
-  eval "cleanup_tempdir_${DIRBASE}() { rm -rf '${DIR}' >&/dev/null || true ; }"
+  eval "cleanup_tempdir_${DIRBASE}() { echo '${DIR}' || true ; }"
   atexit cleanup_tempdir_${DIRBASE}
   NEW_TMPDIR="${DIR}"
 }

@@ -31,8 +31,6 @@ cc_library(
         "//src:windows": [
             "//src/main/cpp/util:errors",
             "//src/main/cpp/util:filesystem",
-            "//src/main/cpp/util:logging",
-            "//src/main/cpp/util:strings",
         ],
         "//conditions:default": [
         ],
@@ -60,7 +58,6 @@ cc_library(
     deps = [
         "//src/main/cpp/util:errors",
         "//src/main/cpp/util:filesystem",
-        "//src/main/cpp/util:logging",
     ],
 )
 
@@ -85,10 +82,4 @@ filegroup(
     name = "srcs",
     srcs = glob(["**"]) + ["//third_party/ijar/test:srcs"],
     visibility = ["//third_party:__pkg__"],
-)
-
-filegroup(
-    name = "embedded_tools",
-    srcs = glob(["**"]),
-    visibility = ["//visibility:public"],
 )

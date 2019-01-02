@@ -17,13 +17,13 @@
 #include <limits.h>
 #include <stdio.h>
 
-#if defined(_WIN32) || defined(__CYGWIN__)
+#if defined(COMPILER_MSVC) || defined(__CYGWIN__)
 #include <windows.h>
-#else  // !(defined(_WIN32) || defined(__CYGWIN__))
+#else  // !(defined(COMPILER_MSVC) || defined(__CYGWIN__))
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-#endif  // defined(_WIN32) || defined(__CYGWIN__)
+#endif  // defined(COMPILER_MSVC) || defined(__CYGWIN__)
 
 #include <string>
 
@@ -39,12 +39,11 @@ namespace devtools_ijar {
 using std::string;
 
 bool stat_file(const char* path, Stat* result) {
-#if defined(_WIN32) || defined(__CYGWIN__)
+#if defined(COMPILER_MSVC) || defined(__CYGWIN__)
   std::wstring wpath;
-  std::string error;
-  if (!blaze_util::AsAbsoluteWindowsPath(path, &wpath, &error)) {
-    BAZEL_DIE(255) << "stat_file: AsAbsoluteWindowsPath(" << path
-                   << ") failed: " << error;
+  if (!blaze_util::AsWindowsPathWithUncPrefix(path, &wpath)) {
+    blaze_util::die(255, "stat_file: AsWindowsPathWithUncPrefix(%s) failed",
+                    path);
   }
   bool success = false;
   BY_HANDLE_FILE_INFORMATION info;
@@ -69,7 +68,7 @@ bool stat_file(const char* path, Stat* result) {
   }
   ::CloseHandle(handle);
   return success;
-#else   // !(defined(_WIN32) || defined(__CYGWIN__))
+#else   // !(defined(COMPILER_MSVC) || defined(__CYGWIN__))
   struct stat statst;
   if (stat(path, &statst) < 0) {
     return false;
@@ -78,7 +77,7 @@ bool stat_file(const char* path, Stat* result) {
   result->file_mode = statst.st_mode;
   result->is_directory = (statst.st_mode & S_IFDIR) != 0;
   return true;
-#endif  // defined(_WIN32) || defined(__CYGWIN__)
+#endif  // defined(COMPILER_MSVC) || defined(__CYGWIN__)
 }
 
 bool write_file(const char* path, unsigned int perm, const void* data,
@@ -93,10 +92,10 @@ bool read_file(const char* path, void* buffer, size_t size) {
 string get_cwd() { return blaze_util::GetCwd(); }
 
 bool make_dirs(const char* path, unsigned int mode) {
-#ifndef _WIN32
+#ifndef COMPILER_MSVC
   // TODO(laszlocsomor): respect `mode` on Windows/MSVC.
   mode |= S_IWUSR | S_IXUSR;
-#endif  // not _WIN32
+#endif  // not COMPILER_MSVC
   string spath(path);
   if (spath.empty()) {
     return true;

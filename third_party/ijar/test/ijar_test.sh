@@ -41,7 +41,7 @@ shift
 source ${DIR}/testenv.sh || { echo "testenv.sh not found!" >&2; exit 1; }
 
 function cleanup() {
-  rm -fr "${TEST_TMPDIR:-sentinel}"/*
+  rm -fr "$TEST_TMPDIR"/*
 }
 
 trap cleanup EXIT
@@ -75,8 +75,6 @@ INVOKEDYNAMIC_JAR=$IJAR_SRCDIR/test/libinvokedynamic.jar
 INVOKEDYNAMIC_IJAR=$TEST_TMPDIR/invokedynamic_interface.jar
 METHODPARAM_JAR=$IJAR_SRCDIR/test/libmethodparameters.jar
 METHODPARAM_IJAR=$TEST_TMPDIR/methodparameters_interface.jar
-NESTMATES_JAR=$IJAR_SRCDIR/test/nestmates/nestmates.jar
-NESTMATES_IJAR=$TEST_TMPDIR/nestmates_interface.jar
 SOURCEDEBUGEXT_JAR=$IJAR_SRCDIR/test/source_debug_extension.jar
 SOURCEDEBUGEXT_IJAR=$TEST_TMPDIR/source_debug_extension.jar
 CENTRAL_DIR_LARGEST_REGULAR=$IJAR_SRCDIR/test/largest_regular.jar
@@ -232,12 +230,12 @@ function test_ijar_output() {
 
   # Check that -interface.jar timestamps are normalized:
   check_eq 0 $(TZ=UTC $JAR tvf $A_INTERFACE_JAR |
-               grep -v 'Fri Jan 01 00:00:00 UTC 2010' | wc -l) \
+               grep -v 'Tue Jan 01 00:00:00 UTC 1980' | wc -l) \
    "Interface jar contained non-zero timestamps!"
 
 
   # Check that compile-time constants in A are still annotated as such in ijar:
-  $JAVAP -classpath $TEST_TMPDIR/classes -c B | grep -sq 'ldc2_w.*123' ||
+  $JAVAP -classpath $TEST_TMPDIR/classes -c B | grep -sq ldc2_w.*123 ||
     fail "ConstantValue not propagated to class B!"
 
 
@@ -350,7 +348,7 @@ function test_type_annotation() {
   $JAVAP -classpath $TYPEANN2_IJAR -v Util >& $TEST_log || fail "javap failed"
   expect_log "RuntimeVisibleTypeAnnotations" "RuntimeVisibleTypeAnnotations not preserved!"
   cp $TYPEANN2_JAVA $TEST_TMPDIR/TypeAnnotationTest2.java
-  $JAVAC $TEST_TMPDIR/TypeAnnotationTest2.java -cp $TYPEANN2_IJAR ||
+  $JAVAC -J-Xbootclasspath/p:$LANGTOOLS8 $TEST_TMPDIR/TypeAnnotationTest2.java -cp $TYPEANN2_IJAR ||
     fail "javac failed"
 }
 
@@ -367,7 +365,7 @@ function test_object_class() {
   # Check that Object.class can be processed
   mkdir -p $TEST_TMPDIR/java/lang
   cp $OBJECT_JAVA $TEST_TMPDIR/java/lang/.
-  $JAVAC -source 8 -target 8 $TEST_TMPDIR/java/lang/Object.java || fail "javac failed"
+  $JAVAC $TEST_TMPDIR/java/lang/Object.java || fail "javac failed"
   $JAR cf $OBJECT_JAR -C $TEST_TMPDIR java/lang/Object.class || fail "jar failed"
 
   $IJAR $OBJECT_JAR $OBJECT_IJAR || fail "ijar failed"
@@ -516,19 +514,6 @@ function test_method_parameters_attribute() {
   $JAVAP -classpath $METHODPARAM_IJAR -v methodparameters.Test >& $TEST_log \
     || fail "javap failed"
   expect_log "MethodParameters" "MethodParameters not preserved!"
-}
-
-function test_nestmates_attribute() {
-  # Check that Java 11 NestMates attributes are preserved
-  $IJAR $NESTMATES_JAR $NESTMATES_IJAR || fail "ijar failed"
-
-  $JAVAP -classpath $NESTMATES_IJAR -v NestTest >& $TEST_log \
-    || fail "javap failed"
-  expect_log "NestMembers" "NestMembers not preserved!"
-
-  $JAVAP -classpath $NESTMATES_IJAR -v 'NestTest$P' >& $TEST_log \
-    || fail "javap failed"
-  expect_log "NestHost" "NestHost not preserved!"
 }
 
 function test_source_debug_extension_attribute() {
