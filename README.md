@@ -4,6 +4,11 @@
 
 Build and test software of any size, quickly and reliably.
 
+  Before compile, gcc/jdk should be installed.
+       JAVA_HOME should be set 
+       CLASSPATH
+       TMPDIR can be set and the temporary compile files can be found in TMPDIR
+
 * **Speed up your builds and tests**:
   Bazel only rebuilds what is necessary.
   With advanced local and distributed caching, optimized dependency analysis and
